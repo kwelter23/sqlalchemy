@@ -1,4 +1,6 @@
+from scipy import stats
 import numpy as np
+
 
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
@@ -37,7 +39,7 @@ def welcome():
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
         f"/api/v1.0/start<start><br/>"
-        f"/api/v1.0/start/enddate<start>/<end>"
+        f"/api/v1.0/start/end/<start>/<end>"
     )
 
 #Precipitation Dictionary
@@ -113,27 +115,49 @@ def temp_stats_with_start(start):
 
     session.close
 
-    temp_list = [] 
+    temp_list = []
+    output_list = []
     for date, tobs in results:
-        #search_term = date
-        #temp_dict = {}
-        #temp_dict = tobs
 
         if date >= start:
             temp_list.append(tobs)
+            
+        #temp_list.append(tobs)
+        #return jsonify(temp_list)   
+        
+    temp_dict = {}
+    temp_dict["Minimum temp"] = stats.tmin(temp_list)
+    temp_dict["Maximum temp"] = stats.tmax(temp_list)
+    temp_dict["Average temp"] = stats.tmean(temp_list)
+    output_list.append(temp_dict)
+    return jsonify(output_list)
+    
+@app.route("/api/v1.0/start/end/<start>/<end>")
+def temp_stats_with_start_end(start, end):
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
 
-    return jsonify(temp_list)           
- 
+    # Query precipitation
+    results = session.query(Measurement.date, Measurement.tobs).all()
 
+    session.close
 
-# When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive.
-#@app.route("/api/v1.0/<start>/<end>")
-#def startendtemp():
+    temp_list = []
+    output_list = []
+    for date, tobs in results:
 
-
-
-
-
+        if date >= start and date<= end:
+            temp_list.append(tobs)
+            
+        #temp_list.append(tobs)
+        #return jsonify(temp_list)   
+        
+    temp_dict = {}
+    temp_dict["Minimum temp"] = stats.tmin(temp_list)
+    temp_dict["Maximum temp"] = stats.tmax(temp_list)
+    temp_dict["Average temp"] = stats.tmean(temp_list)
+    output_list.append(temp_dict)
+    return jsonify(output_list)
 
 
 if __name__ == "__main__":
